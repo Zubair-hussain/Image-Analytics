@@ -16,16 +16,18 @@ export default function DashboardPage() {
   const [count, setCount] = useState<number | null>(null);
   const [byDay, setByDay] = useState<any[]>([]);
   const [byLabel, setByLabel] = useState<any[]>([]);
+
   const [images, setImages] = useState<ImageItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
 
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [time, setTime] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  // clock
+  // ── Live clock ──
   useEffect(() => {
     const tick = () =>
       setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
@@ -35,6 +37,7 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
+  // ── Fetch data ──
   const fetchAll = useCallback(async (p = 1) => {
     try {
       setLoading(true);
@@ -51,12 +54,22 @@ export default function DashboardPage() {
       setByDay(dayData);
       setByLabel(lblData);
 
-      // ✅ FIXED
-      const items = imgData.items ?? [];
-      const totalCount = imgData.count ?? 0;
+      const items = imgData.items || [];
 
-      setImages(items);
-      setTotal(totalCount);
+      // ── FIX: normalize backend response ──
+      const normalized: ImageItem[] = items.map((img: any) => ({
+        id: img.id,
+        filename: img.filename,
+        size: img.size,
+        label: img.label,
+        timestamp: img.timestamp ?? null,
+        width: img.width,
+        height: img.height,
+        image_url: img.image_url,
+      }));
+
+      setImages(normalized);
+      setTotal(imgData.count ?? 0);
     } catch {
       setError("Failed to fetch data from the observatory.");
     } finally {
@@ -64,10 +77,10 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // ── Auth check ──
   useEffect(() => {
-    const token = localStorage.getItem("xis_token");
-
-    if (!token) {
+    const t = localStorage.getItem("xis_token");
+    if (!t) {
       router.push("/login");
       return;
     }
@@ -86,27 +99,82 @@ export default function DashboardPage() {
     )?.count ?? 0;
 
   return (
-    <div style={{ minHeight: "100vh" }}>
-      {/* NAV */}
-      <nav>
-        <h2>XIS Dashboard</h2>
-        <button onClick={logout}>Logout</button>
+    <div style={{ minHeight: "100vh", color: "var(--text-primary)" }}>
+      {/* ── NAVBAR ── */}
+      <nav
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          background: "rgba(0,0,0,0.4)",
+          backdropFilter: "blur(24px)",
+          borderBottom: "1px solid var(--border)",
+          padding: "0 40px",
+          height: 72,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <p
+            style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontWeight: 700,
+              fontSize: 18,
+            }}
+          >
+            XIS <span style={{ fontWeight: 400 }}>Analytics</span>
+          </p>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <span style={{ fontSize: 12 }}>{time}</span>
+
+          <button onClick={logout}>EJECT</button>
+        </div>
       </nav>
 
-      {/* MAIN */}
+      {/* ── MAIN ── */}
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: 40 }}>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <div style={{ color: "red" }}>{error}</div>}
 
-        {/* TABLE */}
-        <ImageTable
-          images={images}
-          total={total}
-          page={page}
-          onPageChange={setPage}
-        />
+        {/* ── STATS ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
+          <StatsCard label="Total" value={count ?? "—"} sub="All time" delay="d1" />
+          <StatsCard label="Labels" value={byLabel.length} sub="Categories" delay="d2" />
+          <StatsCard label="Days" value={byDay.length} sub="Timeline" delay="d3" />
+          <StatsCard label="Today" value={todayCount} sub="Uploads" delay="d4" />
+        </div>
+
+        {/* ── CHARTS ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginTop: 30 }}>
+          {loading ? (
+            <div>Loading...</div>
+          ) : (
+            <>
+              <ImagesPerDayChart data={byDay} />
+              <ImagesPerLabelChart data={byLabel} />
+            </>
+          )}
+        </div>
+
+        {/* ── TABLE ── */}
+        <div style={{ marginTop: 30 }}>
+          {loading ? (
+            <div>Loading table...</div>
+          ) : (
+            <ImageTable
+              images={images}
+              total={total}
+              page={page}
+              onPageChange={setPage}
+            />
+          )}
+        </div>
       </main>
 
-      {/* MODAL */}
+      {/* ── MODAL ── */}
       {showModal && (
         <AddImageModal
           onClose={() => setShowModal(false)}
