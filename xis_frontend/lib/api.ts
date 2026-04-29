@@ -1,6 +1,6 @@
 // ── api.ts ──
 
-const BASE = process.env.NEXT_PUBLIC_API_URL!;
+const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ── Types ──
 export type ImageItem = {
@@ -8,7 +8,7 @@ export type ImageItem = {
   filename: string;
   size: number;
   label: string;
-  timestamp?: string;
+  timestamp: string; // ✅ FIXED (was optional)
   width: number;
   height: number;
   image_url: string | null;
@@ -18,7 +18,7 @@ export type Paginated<T> = {
   count: number;
   next: string | null;
   previous?: string | null;
-  items: T[];
+  items: T[]; // ✅ ONLY THIS (no results)
 };
 
 // ── Token helpers ──
@@ -41,7 +41,6 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     ...(opts.headers as Record<string, string>),
   };
 
-  // Only set JSON header if NOT FormData
   if (!(opts.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
@@ -55,7 +54,6 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     headers,
   });
 
-  // ── Handle auth failure ──
   if (res.status === 401) {
     clearToken();
     if (typeof window !== "undefined") {
@@ -64,7 +62,6 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     throw new Error("Unauthorized");
   }
 
-  // ── Better error parsing ──
   if (!res.ok) {
     let message = "Request failed";
     try {
@@ -81,7 +78,6 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
 // ── API ──
 export const api = {
-  // ── Auth ──
   login: async (username: string, password: string) => {
     const data = await req<{ access: string }>("/auth/login/", {
       method: "POST",
@@ -102,26 +98,25 @@ export const api = {
     }
   },
 
-  // ── Stats ──
-  count:   () => req<{ count: number }>("/images/count/"),
-  byLabel: () => req<{ label: string; count: number }[]>("/images/group-by-label/"),
-  byDay:   () => req<{ date: string; count: number }[]>("/images/group-by-day/"),
+  count: () => req<{ count: number }>("/images/count/"),
 
-  // ── List ──
+  byLabel: () =>
+    req<{ label: string; count: number }[]>("/images/group-by-label/"),
+
+  byDay: () =>
+    req<{ date: string; count: number }[]>("/images/group-by-day/"),
+
   images: (page = 1, limit = 8, label?: string) => {
     const params = new URLSearchParams({
       page: String(page),
-      page_size: String(limit), // DRF standard
+      page_size: String(limit),
     });
 
-    if (label) {
-      params.append("label", label);
-    }
+    if (label) params.append("label", label);
 
     return req<Paginated<ImageItem>>(`/images/?${params.toString()}`);
   },
 
-  // ── Upload ──
   upload: (file: File) => {
     const form = new FormData();
     form.append("image", file);
