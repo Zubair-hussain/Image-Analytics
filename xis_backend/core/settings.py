@@ -3,22 +3,14 @@
 from pathlib import Path
 import os
 from datetime import timedelta
-import dj_database_url
 
+# ── BASE DIR ──
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── SECURITY ──
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
-
-# IMPORTANT: Render sets DEBUG=False in production
-DEBUG = os.getenv("DEBUG", "False") == "True"
-
-# Render + frontend domains
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    ".onrender.com",
-]
+DEBUG = os.getenv("DEBUG", "True") == "True"
+ALLOWED_HOSTS = ["*"]
 
 # ── APPLICATIONS ──
 INSTALLED_APPS = [
@@ -29,29 +21,28 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # third party
+    # Third-party
     'rest_framework',
     'corsheaders',
 
-    # local apps
+    # Local
     'images',
 ]
 
 # ── MIDDLEWARE ──
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# ── URLS ──
 ROOT_URLCONF = 'core.urls'
 
 # ── TEMPLATES ──
@@ -62,6 +53,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -70,9 +62,11 @@ TEMPLATES = [
     },
 ]
 
+# ── WSGI ──
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# ── DATABASE (Render PostgreSQL support) ──
+# ── DATABASE ──
+# Default: SQLite (works in Docker without setup)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -80,8 +74,9 @@ DATABASES = {
     }
 }
 
-# If DATABASE_URL exists (Render PostgreSQL)
+# Optional: Use PostgreSQL if DATABASE_URL provided
 if os.getenv("DATABASE_URL"):
+    import dj_database_url
     DATABASES['default'] = dj_database_url.parse(os.getenv("DATABASE_URL"))
 
 # ── PASSWORD VALIDATION ──
@@ -98,18 +93,18 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# ── STATIC FILES (IMPORTANT FOR RENDER) ──
+# ── STATIC FILES ──
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# ── MEDIA ──
+# ── MEDIA FILES ──
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
-# ── DEFAULT AUTO FIELD ──
+# ── DEFAULT PK ──
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── DRF ──
+# ── DRF CONFIG ──
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -121,30 +116,26 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 8,
 }
 
-# ── JWT ──
+# ── JWT CONFIG ──
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# ── CORS (IMPORTANT FOR VERCEL FRONTEND) ──
+# ── CORS ──
 CORS_ALLOW_ALL_ORIGINS = True
 
-# OPTIONAL (better security later)
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "https://your-frontend.vercel.app",
-# ]
-
-# ── LOGGING ──
+# ── LOGGING (optional but useful) ──
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'console': {'class': 'logging.StreamHandler'},
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
     },
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
     },
-}
+} 
