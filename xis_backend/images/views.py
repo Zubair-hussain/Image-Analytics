@@ -143,3 +143,11 @@ class GroupByDayView(APIView):
             }
             for item in data
         ])
+
+
+from .serializers import UserRegisterSerializer
+from rest_framework.permissions import AllowAny
+
+class RegisterView(generics.CreateAPIView):
+    serializer_class = UserRegisterSerializer
+    permission_classes = [AllowAny]
