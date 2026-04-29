@@ -58,7 +58,8 @@ async function req<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, {
+  const url = `${BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const res = await fetch(url, {
     ...opts,
     headers,
   });
