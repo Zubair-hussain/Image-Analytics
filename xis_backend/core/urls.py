@@ -11,6 +11,9 @@ urlpatterns = [
     path('auth/login/',   TokenObtainPairView.as_view(), name='token_obtain'),
     path('auth/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
 
+    # Root
+    path('', lambda request: JsonResponse({'name': 'XIS Analytics API', 'status': 'running'})),
+
     # APIs
     path('images/', include('images.urls')),
 
