@@ -7,7 +7,7 @@ interface Image {
   filename: string;
   size: number;
   label: string;
-  timestamp: string;
+  timestamp?: string | null; // FIXED
   width?: number;
   height?: number;
   image_url?: string | null;
@@ -22,7 +22,12 @@ interface Props {
 
 const LIMIT = 8;
 
-export default function ImageTable({ images, total, page, onPageChange }: Props) {
+export default function ImageTable({
+  images,
+  total,
+  page,
+  onPageChange,
+}: Props) {
   const totalPages = Math.ceil(total / LIMIT);
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
 
@@ -48,29 +53,35 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {["", "#", "FILENAME", "SIZE", "DIMENSIONS", "LABEL", "TIMESTAMP"].map((h, i) => (
-                <th
-                  key={i}
-                  style={{
-                    textAlign: "left",
-                    padding: "8px 12px",
-                    fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: "var(--text-muted)",
-                    letterSpacing: "0.1em",
-                    borderBottom: "1px solid rgba(0,212,170,0.08)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
+              {["", "#", "FILENAME", "SIZE", "DIMENSIONS", "LABEL", "TIMESTAMP"].map(
+                (h, i) => (
+                  <th
+                    key={i}
+                    style={{
+                      textAlign: "left",
+                      padding: "8px 12px",
+                      fontSize: 10,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: "var(--text-muted)",
+                      letterSpacing: "0.1em",
+                      borderBottom: "1px solid rgba(0,212,170,0.08)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h}
+                  </th>
+                )
+              )}
             </tr>
           </thead>
 
           <tbody>
             {images.map((img) => {
               const failed = failedImages[img.id];
+
+              const safeDate = img.timestamp
+                ? new Date(img.timestamp)
+                : null;
 
               return (
                 <tr
@@ -79,12 +90,6 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
                     borderBottom: "1px solid rgba(0,212,170,0.04)",
                     transition: "background 0.2s",
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "rgba(0,212,170,0.025)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
                 >
                   {/* Thumbnail */}
                   <td style={{ padding: "10px 12px", width: 48 }}>
@@ -113,7 +118,6 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            display: "block",
                           }}
                         />
                       </div>
@@ -125,91 +129,28 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
                           borderRadius: 8,
                           background: "rgba(0,212,170,0.06)",
                           border: "1px solid rgba(0,212,170,0.1)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
                         }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <rect
-                            x="1"
-                            y="3"
-                            width="14"
-                            height="10"
-                            rx="2"
-                            stroke="rgba(0,212,170,0.4)"
-                            strokeWidth="1"
-                          />
-                          <circle
-                            cx="5.5"
-                            cy="7"
-                            r="1.5"
-                            stroke="rgba(0,212,170,0.4)"
-                            strokeWidth="1"
-                          />
-                          <path
-                            d="M1 11l3-2.5 2.5 1.5L10 7l5 4"
-                            stroke="rgba(0,212,170,0.4)"
-                            strokeWidth="1"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
+                      />
                     )}
                   </td>
 
                   {/* ID */}
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      color: "var(--text-muted)",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  >
+                  <td style={{ padding: "10px 12px", fontSize: 12 }}>
                     {String(img.id).padStart(3, "0")}
                   </td>
 
                   {/* Filename */}
-                  <td
-                    title={img.filename}
-                    style={{
-                      padding: "10px 12px",
-                      color: "var(--text-primary)",
-                      fontSize: 13,
-                      maxWidth: 160,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <td style={{ padding: "10px 12px", maxWidth: 160 }}>
                     {img.filename}
                   </td>
 
                   {/* Size */}
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      color: "var(--text-secondary)",
-                      fontSize: 12,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <td style={{ padding: "10px 12px" }}>
                     {img.size.toFixed(1)} KB
                   </td>
 
                   {/* Dimensions */}
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      color: "var(--text-muted)",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <td style={{ padding: "10px 12px" }}>
                     {img.width && img.height
                       ? `${img.width}×${img.height}`
                       : "—"}
@@ -220,22 +161,16 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
                     <span className="label-chip">{img.label}</span>
                   </td>
 
-                  {/* Timestamp */}
-                  <td
-                    style={{
-                      padding: "10px 12px",
-                      color: "var(--text-muted)",
-                      fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {new Date(img.timestamp).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  {/* Timestamp (FIXED SAFE) */}
+                  <td style={{ padding: "10px 12px", fontSize: 11 }}>
+                    {safeDate && !isNaN(safeDate.getTime())
+                      ? safeDate.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
                   </td>
                 </tr>
               );
@@ -249,18 +184,11 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
         <div
           style={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
             marginTop: 20,
           }}
         >
-          <p
-            style={{
-              fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: "var(--text-muted)",
-            }}
-          >
+          <p>
             PAGE {page} / {totalPages} · {total} RECORDS
           </p>
 
@@ -268,15 +196,6 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page === 1}
-              className="aurora-btn"
-              style={{
-                padding: "6px 16px",
-                borderRadius: 8,
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                cursor: page === 1 ? "not-allowed" : "pointer",
-                opacity: page === 1 ? 0.3 : 1,
-              }}
             >
               ← PREV
             </button>
@@ -284,15 +203,6 @@ export default function ImageTable({ images, total, page, onPageChange }: Props)
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page === totalPages}
-              className="aurora-btn"
-              style={{
-                padding: "6px 16px",
-                borderRadius: 8,
-                fontSize: 12,
-                fontFamily: "'JetBrains Mono', monospace",
-                cursor: page === totalPages ? "not-allowed" : "pointer",
-                opacity: page === totalPages ? 0.3 : 1,
-              }}
             >
               NEXT →
             </button>
