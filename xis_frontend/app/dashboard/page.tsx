@@ -10,28 +10,22 @@ import ImagesPerLabelChart from "@/app/components/dashboard/ImagesPerLabelChart"
 import ImageTable from "@/app/components/dashboard/ImageTable";
 import AddImageModal from "@/app/components/dashboard/AddImageModal";
 
-// ── Types ──
-type DayStat = { date: string; count: number };
-type LabelStat = { label: string; count: number };
-
 export default function DashboardPage() {
   const router = useRouter();
 
   const [count, setCount] = useState<number | null>(null);
-  const [byDay, setByDay] = useState<DayStat[]>([]);
-  const [byLabel, setByLabel] = useState<LabelStat[]>([]);
+  const [byDay, setByDay] = useState<any[]>([]);
+  const [byLabel, setByLabel] = useState<any[]>([]);
   const [images, setImages] = useState<ImageItem[]>([]);
-
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [time, setTime] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  // ── Live clock ──
+  // clock
   useEffect(() => {
     const tick = () =>
       setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
@@ -41,8 +35,7 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Fetch ──
-  const fetchAll = useCallback(async (p: number = 1) => {
+  const fetchAll = useCallback(async (p = 1) => {
     try {
       setLoading(true);
       setError("");
@@ -58,18 +51,19 @@ export default function DashboardPage() {
       setByDay(dayData);
       setByLabel(lblData);
 
-      // ✅ FIXED: only use items
-      setImages(imgData.items);
-      setTotal(imgData.count ?? 0);
+      // ✅ FIXED
+      const items = imgData.items ?? [];
+      const totalCount = imgData.count ?? 0;
 
-    } catch (err: any) {
-      setError(err?.message || "Failed to fetch data.");
+      setImages(items);
+      setTotal(totalCount);
+    } catch {
+      setError("Failed to fetch data from the observatory.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ── Auth Guard ──
   useEffect(() => {
     const token = localStorage.getItem("xis_token");
 
@@ -81,78 +75,27 @@ export default function DashboardPage() {
     fetchAll(page);
   }, [page, fetchAll, router]);
 
-  // ── Logout ──
   function logout() {
     localStorage.removeItem("xis_token");
     router.push("/login");
   }
 
-  // ── Today Count ──
-  const todayISO = new Date().toISOString().slice(0, 10);
-
   const todayCount =
-    byDay.find((d) => d.date === todayISO)?.count ?? 0;
+    byDay.find(
+      (d) => d.date === new Date().toISOString().slice(0, 10)
+    )?.count ?? 0;
 
   return (
-    <div style={{ minHeight: "100vh", color: "var(--text-primary)" }}>
-      
-      {/* NAVBAR */}
-      <nav style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "rgba(0,0,0,0.4)",
-        backdropFilter: "blur(24px)",
-        borderBottom: "1px solid var(--border)",
-        padding: "0 40px",
-        height: 72,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between"
-      }}>
-        <div style={{ fontWeight: 700 }}>
-          XIS Analytics
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <span>{time}</span>
-          <button onClick={logout}>Logout</button>
-        </div>
+    <div style={{ minHeight: "100vh" }}>
+      {/* NAV */}
+      <nav>
+        <h2>XIS Dashboard</h2>
+        <button onClick={logout}>Logout</button>
       </nav>
 
       {/* MAIN */}
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: 40 }}>
-
-        {/* ERROR */}
-        {error && (
-          <p style={{ color: "red", marginBottom: 20 }}>
-            {error}
-          </p>
-        )}
-
-        {/* STATS */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 20,
-          marginBottom: 32
-        }}>
-          <StatsCard label="Total Registry" value={count ?? "—"} />
-          <StatsCard label="Classifications" value={byLabel.length} />
-          <StatsCard label="Observation Days" value={byDay.length} />
-          <StatsCard label="Live Delta" value={todayCount} />
-        </div>
-
-        {/* CHARTS */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: 20,
-          marginBottom: 32
-        }}>
-          <ImagesPerDayChart data={byDay} />
-          <ImagesPerLabelChart data={byLabel} />
-        </div>
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
         {/* TABLE */}
         <ImageTable
