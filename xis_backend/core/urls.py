@@ -6,10 +6,13 @@ from django.conf.urls.static import static
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from images.views import RegisterView
+
 urlpatterns = [
     # Auth
-    path('auth/login/',   TokenObtainPairView.as_view(), name='token_obtain'),
-    path('auth/refresh/', TokenRefreshView.as_view(),    name='token_refresh'),
+    path('auth/login/',    TokenObtainPairView.as_view(), name='token_obtain'),
+    path('auth/refresh/',  TokenRefreshView.as_view(),    name='token_refresh'),
+    path('auth/register/', RegisterView.as_view(),        name='register'),
 
     # Root
     path('', lambda request: JsonResponse({'name': 'XIS Analytics API', 'status': 'running'})),
