@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -162,6 +163,15 @@ export default function LoginPage() {
                 <>Initiate Access</>
               )}
             </button>
+
+            <div style={{ textAlign: "center", marginTop: 24 }}>
+               <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
+                 Don&apos;t have an identity? {" "}
+                 <Link href="/signup" style={{ color: "var(--aurora)", fontWeight: 600, textDecoration: "none" }}>
+                   Join the Mission
+                 </Link>
+               </p>
+            </div>
           </form>
         </div>
 
