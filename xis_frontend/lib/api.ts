@@ -1,16 +1,21 @@
 // ── api.ts ──
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BASE =
+  process.env.NEXT_PUBLIC_API_URL!;
 
-// ── Types ──
+// ── TYPES ──
 export type ImageItem = {
   id: number;
   filename: string;
   size: number;
   label: string;
-  timestamp: string; // ✅ FIXED (was optional)
+
+  //  FIXED: always required (Django auto_now_add always returns value)
+  timestamp: string;
+
   width: number;
   height: number;
+
   image_url: string | null;
 };
 
@@ -18,10 +23,10 @@ export type Paginated<T> = {
   count: number;
   next: string | null;
   previous?: string | null;
-  items: T[]; // ✅ ONLY THIS (no results)
+  items: T[];
 };
 
-// ── Token helpers ──
+// ── TOKEN HELPERS ──
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("xis_token");
@@ -33,20 +38,24 @@ function clearToken() {
   }
 }
 
-// ── Core request ──
-async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const t = getToken();
+// ── CORE REQUEST ──
+async function req<T>(
+  path: string,
+  opts: RequestInit = {}
+): Promise<T> {
+  const token = getToken();
 
   const headers: Record<string, string> = {
     ...(opts.headers as Record<string, string>),
   };
 
+  // Only set JSON header if not FormData
   if (!(opts.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
-  if (t) {
-    headers["Authorization"] = `Bearer ${t}`;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const res = await fetch(`${BASE}${path}`, {
@@ -54,6 +63,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     headers,
   });
 
+  // ── AUTH ERROR ──
   if (res.status === 401) {
     clearToken();
     if (typeof window !== "undefined") {
@@ -62,6 +72,7 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
     throw new Error("Unauthorized");
   }
 
+  // ── ERROR HANDLING ──
   if (!res.ok) {
     let message = "Request failed";
     try {
@@ -76,8 +87,9 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
-// ── API ──
+// ── API METHODS ──
 export const api = {
+  // AUTH
   login: async (username: string, password: string) => {
     const data = await req<{ access: string }>("/auth/login/", {
       method: "POST",
@@ -98,25 +110,37 @@ export const api = {
     }
   },
 
-  count: () => req<{ count: number }>("/images/count/"),
+  // STATS
+  count: () =>
+    req<{ count: number }>("/images/count/"),
 
   byLabel: () =>
-    req<{ label: string; count: number }[]>("/images/group-by-label/"),
+    req<{ label: string; count: number }[]>(
+      "/images/group-by-label/"
+    ),
 
   byDay: () =>
-    req<{ date: string; count: number }[]>("/images/group-by-day/"),
+    req<{ date: string; count: number }[]>(
+      "/images/group-by-day/"
+    ),
 
+  // LIST (PAGINATION FIXED)
   images: (page = 1, limit = 8, label?: string) => {
     const params = new URLSearchParams({
       page: String(page),
       page_size: String(limit),
     });
 
-    if (label) params.append("label", label);
+    if (label) {
+      params.append("label", label);
+    }
 
-    return req<Paginated<ImageItem>>(`/images/?${params.toString()}`);
+    return req<Paginated<ImageItem>>(
+      `/images/?${params.toString()}`
+    );
   },
 
+  // UPLOAD
   upload: (file: File) => {
     const form = new FormData();
     form.append("image", file);
