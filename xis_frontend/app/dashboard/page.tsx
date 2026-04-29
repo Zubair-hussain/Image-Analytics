@@ -41,7 +41,7 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
-  // ── Fetch data ──
+  // ── Fetch ──
   const fetchAll = useCallback(async (p: number = 1) => {
     try {
       setLoading(true);
@@ -58,7 +58,7 @@ export default function DashboardPage() {
       setByDay(dayData);
       setByLabel(lblData);
 
-      //  FIXED (no results fallback)
+      // ✅ FIXED: only use items
       setImages(imgData.items);
       setTotal(imgData.count ?? 0);
 
@@ -69,7 +69,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // ── Auth guard ──
+  // ── Auth Guard ──
   useEffect(() => {
     const token = localStorage.getItem("xis_token");
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
     router.push("/login");
   }
 
-  // ── Today count (typed fix) ──
+  // ── Today Count ──
   const todayISO = new Date().toISOString().slice(0, 10);
 
   const todayCount =
@@ -96,7 +96,7 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight: "100vh", color: "var(--text-primary)" }}>
       
-      {/* ── NAVBAR ── */}
+      {/* NAVBAR */}
       <nav style={{
         position: "sticky",
         top: 0,
@@ -110,38 +110,40 @@ export default function DashboardPage() {
         alignItems: "center",
         justifyContent: "space-between"
       }}>
-        <div style={{ fontWeight: 700 }}>XIS Analytics</div>
+        <div style={{ fontWeight: 700 }}>
+          XIS Analytics
+        </div>
 
-        <div style={{ display: "flex", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <span>{time}</span>
           <button onClick={logout}>Logout</button>
         </div>
       </nav>
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: 40 }}>
 
-        {/* Error */}
+        {/* ERROR */}
         {error && (
           <p style={{ color: "red", marginBottom: 20 }}>
             {error}
           </p>
         )}
 
-        {/* ── STATS ── */}
+        {/* STATS */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: 20,
           marginBottom: 32
         }}>
-          <StatsCard label="Total" value={count ?? "—"} />
-          <StatsCard label="Labels" value={byLabel.length} />
-          <StatsCard label="Days" value={byDay.length} />
-          <StatsCard label="Today" value={todayCount} />
+          <StatsCard label="Total Registry" value={count ?? "—"} />
+          <StatsCard label="Classifications" value={byLabel.length} />
+          <StatsCard label="Observation Days" value={byDay.length} />
+          <StatsCard label="Live Delta" value={todayCount} />
         </div>
 
-        {/* ── CHARTS ── */}
+        {/* CHARTS */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "2fr 1fr",
@@ -152,7 +154,7 @@ export default function DashboardPage() {
           <ImagesPerLabelChart data={byLabel} />
         </div>
 
-        {/* ── TABLE ── */}
+        {/* TABLE */}
         <ImageTable
           images={images}
           total={total}
@@ -161,7 +163,7 @@ export default function DashboardPage() {
         />
       </main>
 
-      {/* ── MODAL ── */}
+      {/* MODAL */}
       {showModal && (
         <AddImageModal
           onClose={() => setShowModal(false)}
