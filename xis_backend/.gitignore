@@ -1,0 +1,41 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+
+# ── Django ──
+db.sqlite3
+media/
+staticfiles/
+*.pot
+*.pyc
+
+# ── Environment variables ──
+.env
+.env.*
+!.env.example
+
+# ── Virtual environment ──
+venv/
+env/
+ENV/
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── Migrations (optional safe ignore if you regenerate carefully) ──
+# If you already committed migrations, DO NOT enable this:
+# migrations/__pycache__/
