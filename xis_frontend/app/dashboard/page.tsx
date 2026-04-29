@@ -10,7 +10,7 @@ import ImagesPerLabelChart from "@/app/components/dashboard/ImagesPerLabelChart"
 import ImageTable from "@/app/components/dashboard/ImageTable";
 import AddImageModal from "@/app/components/dashboard/AddImageModal";
 
-// ✅ Types
+// ── Types ──
 type DayStat = { date: string; count: number };
 type LabelStat = { label: string; count: number };
 
@@ -34,16 +34,14 @@ export default function DashboardPage() {
   // ── Live clock ──
   useEffect(() => {
     const tick = () =>
-      setTime(
-        new Date().toLocaleTimeString("en-US", { hour12: false })
-      );
+      setTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
 
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
-  // ── Fetch ──
+  // ── Fetch data ──
   const fetchAll = useCallback(async (p: number = 1) => {
     try {
       setLoading(true);
@@ -60,8 +58,10 @@ export default function DashboardPage() {
       setByDay(dayData);
       setByLabel(lblData);
 
-      setImages(imgData.items || []);
+      //  FIXED (no results fallback)
+      setImages(imgData.items);
       setTotal(imgData.count ?? 0);
+
     } catch (err: any) {
       setError(err?.message || "Failed to fetch data.");
     } finally {
@@ -69,11 +69,11 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // ── Auth Guard ──
+  // ── Auth guard ──
   useEffect(() => {
-    const t = localStorage.getItem("xis_token");
+    const token = localStorage.getItem("xis_token");
 
-    if (!t) {
+    if (!token) {
       router.push("/login");
       return;
     }
@@ -87,15 +87,16 @@ export default function DashboardPage() {
     router.push("/login");
   }
 
-  // ✅ FIXED TYPE ISSUE HERE
+  // ── Today count (typed fix) ──
   const todayISO = new Date().toISOString().slice(0, 10);
 
   const todayCount =
-    byDay.find((d: DayStat) => d.date === todayISO)?.count ?? 0;
+    byDay.find((d) => d.date === todayISO)?.count ?? 0;
 
   return (
     <div style={{ minHeight: "100vh", color: "var(--text-primary)" }}>
-      {/* NAVBAR */}
+      
+      {/* ── NAVBAR ── */}
       <nav style={{
         position: "sticky",
         top: 0,
@@ -109,21 +110,25 @@ export default function DashboardPage() {
         alignItems: "center",
         justifyContent: "space-between"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <p style={{ fontWeight: 700 }}>XIS Analytics</p>
-        </div>
+        <div style={{ fontWeight: 700 }}>XIS Analytics</div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ display: "flex", gap: 20 }}>
           <span>{time}</span>
           <button onClick={logout}>Logout</button>
         </div>
       </nav>
 
-      {/* MAIN */}
+      {/* ── MAIN ── */}
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: 40 }}>
-        {error && <p style={{ color: "red" }}>{error}</p>}
 
-        {/* STATS */}
+        {/* Error */}
+        {error && (
+          <p style={{ color: "red", marginBottom: 20 }}>
+            {error}
+          </p>
+        )}
+
+        {/* ── STATS ── */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
@@ -136,7 +141,7 @@ export default function DashboardPage() {
           <StatsCard label="Today" value={todayCount} />
         </div>
 
-        {/* CHARTS */}
+        {/* ── CHARTS ── */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "2fr 1fr",
@@ -147,7 +152,7 @@ export default function DashboardPage() {
           <ImagesPerLabelChart data={byLabel} />
         </div>
 
-        {/* TABLE */}
+        {/* ── TABLE ── */}
         <ImageTable
           images={images}
           total={total}
@@ -156,7 +161,7 @@ export default function DashboardPage() {
         />
       </main>
 
-      {/* MODAL */}
+      {/* ── MODAL ── */}
       {showModal && (
         <AddImageModal
           onClose={() => setShowModal(false)}
