@@ -150,4 +150,12 @@ export const api = {
       body: form,
     });
   },
+  
+  // AUTH
+  register: (data: any) => {
+    return req("/auth/register/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
 };
